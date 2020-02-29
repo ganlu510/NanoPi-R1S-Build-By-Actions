@@ -18,11 +18,6 @@ on:
   #   - cron: 0 20 * * *
   # release:
   #   types: [published]
-    
-#环境变量：SSH_ACTIONS设置为true则会在执行完Costom Configure File后显示一个SSH的链接，可用终端或者web登录到vps进行配置
-env:
-  SSH_ACTIONS: true
-  TZ: Asia/Shanghai
 
 jobs:
 
@@ -53,16 +48,17 @@ jobs:
           mkdir friendlywrt-h5
           cd friendlywrt-h5
           repo init -u https://github.com/friendlyarm/friendlywrt_manifests -b master -m h5.xml --repo-url=https://github.com/friendlyarm/repo  --no-clone-bundle
-      
-      - name: Merge UpStearm OpenWrt
-        run: |
-          cd friendlywrt-h5
-          cd .repo/manifests
-          rm -f ./h5.xml
-          wget https://raw.githubusercontent.com/skytotwo/NanoPi-R1S-Build-By-Actions/master/source_xml/h5_19.07.xml
-          cp h5_19.07.xml h5.xml
-          rm -rf ./h5_19.07.xml
-          repo sync -c  --no-clone-bundle
+          repo sync -c --no-clone-bundle -j$(nproc)
+
+     # - name: Merge UpStearm OpenWrt
+     #  run: |
+        #   cd friendlywrt-h5
+        #  cd .repo/manifests
+        #  rm -f ./h5.xml
+        #  wget https://raw.githubusercontent.com/skytotwo/NanoPi-R1S-Build-By-Actions/master/source_xml/h5_19.07.xml
+        #  cp h5_19.07.xml h5.xml
+        #  rm -rf ./h5_19.07.xml
+        #  repo sync -c  --no-clone-bundle
       
       - name: Merge LEDE
         run: |
@@ -70,8 +66,8 @@ jobs:
           git clone https://github.com/coolsnowwolf/lede
           cd friendlywrt
           cp -r ../lede/package/lean package/
-          sed -i 's/https:\/\/git.openwrt.org\/project\/luci.git^039ef1f4deba725d3591b159bbc9569885d68131/https:\/\/github.com\/coolsnowwolf\/luci/' feeds.conf.default
-          sed -i 's/https:\/\/git.openwrt.org\/feed\/packages.git^00803ffc91e80b16e9c1603ff32106d42e255923/https:\/\/github.com\/coolsnowwolf\/packages/' feeds.conf.default          
+          # sed -i 's/https:\/\/git.openwrt.org\/project\/luci.git^039ef1f4deba725d3591b159bbc9569885d68131/https:\/\/github.com\/coolsnowwolf\/luci/' feeds.conf.default
+          # sed -i 's/https:\/\/git.openwrt.org\/feed\/packages.git^00803ffc91e80b16e9c1603ff32106d42e255923/https:\/\/github.com\/coolsnowwolf\/packages/' feeds.conf.default          
       
       - name: Custom Applications
         run: |
@@ -96,10 +92,8 @@ jobs:
           wget https://raw.githubusercontent.com/skytotwo/NanoPi-R1S-Build-By-Actions/master/r1s-h5-config
           cp r1s-h5-config .config
       
-      #如果环境变量设置为true,执行到此步骤时会弹出几行信息，上面有ssh的命令和https的链接，可选择在终端通过ssh链接修改配置或者通过web连接修改
       - name: SSH connection to Actions
         uses: P3TERX/debugger-action@master
-        if: env.SSH_ACTIONS == 'true'
       
       - name: Download package
         if: always()
